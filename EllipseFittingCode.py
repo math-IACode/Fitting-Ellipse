@@ -11,11 +11,11 @@ vernal_equinox_angle=(25-21.64)/100*360
 no_data_points=50
 data_points=[]
 column=36
+
 #Importing data
 data_file = 'Data_pointsnew.xlsx'
 # Load the entire workbook.
 wb = load_workbook(data_file)
-# List all the sheets in the file.
 
 # Load one worksheet.
 ws = wb['Sheet1']
@@ -33,6 +33,7 @@ for row in range(6,154,3):
         cell[1].append(ws.cell(row+i,column+6).value+ws.cell(row+i,column+1+6).value/60+ws.cell(row+i,column+2+6).value/(60*60))
     data_points.append(cell)
 
+# FUNCTIONS
 def center_xy(val_A,val_B,val_C,val_D,val_E, num):
     if num==1:
         e_col = "cyan"
@@ -46,34 +47,24 @@ def center_xy(val_A,val_B,val_C,val_D,val_E, num):
     # Find center + change position of sun
     cent_x_val, cent_y_val = (2*val_C*val_D-val_E*val_B)/(val_B**2-4*val_A*val_C), (2*val_A*val_E-val_D*val_B)/(val_B**2-4*val_A*val_C)
     sun_x, sun_y = -cent_x_val, -cent_y_val
+    
     # Draw earth orbit, and center points
     earth=plt.Circle((sun_x,sun_y),r,fill=False, color=e_col, label="Earth's orbit")
     ax.add_patch(earth)
     m = plt.scatter(0, 0, color=m_col, label="Location of Center of Mars Ellipse")
     #s = plt.scatter(sun_x,sun_y, color=s_col, label="Location of Sun")
-
-    # Move all the x,y coordinates to move to center
-    #X_center = np.repeat(cent_x_val, no_data_points)
-    #Y_center = np.repeat(cent_y_val, no_data_points)
-    #X_center=X_center.reshape((no_data_points,1))
-    #Y_center=Y_center.reshape((no_data_points,1))
-    #cent_x = np.subtract(X, X_center)
-    #cent_y = np.subtract(Y, Y_center)
-
     return cent_x_val, cent_y_val, sun_x, sun_y
 
 def translate_eq(val_A,val_B,val_C,val_D,val_E,h,k):
-
     F = 1-(val_A*h**2+h*k*val_B+val_C*k**2+h*val_D+val_E*k)
     A=val_A/F
     B=val_B/F
     C=val_C/F
     D=(2*h*val_A+val_B*k+val_D)/F
     E=(h*val_B+2*k*val_C+val_E)/F
-
     return A,B,C,D,E
 
-
+# General variables
 fig, ax = plt.subplots()
 plt.grid()
 r=149.6
@@ -92,6 +83,7 @@ def position_of_mars(date,c,no):
         x2e, y2e = [0,r*math.cos(math.radians(date[0][p]+vernal_equinox_angle))], [0,r*math.sin(math.radians(date[0][p]+vernal_equinox_angle))] 
         x2m, y2m = [x2e[1],d*math.cos(math.radians(date[1][p]+vernal_equinox_angle))+x2e[1]], [y2e[1],d*math.sin(math.radians(date[1][p]+vernal_equinox_angle))+y2e[1]]
 
+        # Draw on screen
         #plt.plot(x1e,y1e,x1m,y1m, color=c,linewidth=0.5)
         #plt.plot(x2e,y2e,x2m,y2m,color=c,linewidth=0.5)
 
@@ -116,6 +108,7 @@ def position_of_mars(date,c,no):
         x3e, y3e = [0,r*math.cos(math.radians(date[0][2]+vernal_equinox_angle))], [0,r*math.sin(math.radians(date[0][2]+vernal_equinox_angle))] 
         x3m, y3m = [x3e[1],d*math.cos(math.radians(date[1][2]+vernal_equinox_angle))+x3e[1]], [y3e[1],d*math.sin(math.radians(date[1][2]+vernal_equinox_angle))+y3e[1]]
 
+        # Draw on screen
         #plt.plot(x1e,y1e,x1m,y1m, color=c,linewidth=0.5)
         #plt.plot(x2e,y2e,x2m,y2m,color=c,linewidth=0.5)
         #plt.plot(x3e,y3e,x3m,y3m,color=c,linewidth=0.5)
@@ -129,14 +122,8 @@ def position_of_mars(date,c,no):
         yi1, yi2, yi3 = m1m*xi1+c1m, m2m*xi2+c2m, m3m*xi3+c3m
 
         # Find centroid of triangle
-        x1_mid, x2_mid = (xi1+xi2)/2,(xi2+xi3)/2
-        y1_mid, y2_mid = (yi1+yi2)/2,(yi2+yi3)/2
-
-        m3_mid, m1_mid = (y1_mid-yi3)/(x1_mid-xi3), (y2_mid-yi1)/(x2_mid-xi1)
-        c3_mid, c1_mid = y1_mid-m3_mid*x1_mid, y2_mid-m1_mid*x2_mid
-
-        x_mid = (c1_mid-c3_mid)/(m3_mid-m1_mid)
-        y_mid = m1_mid*x_mid+c1_mid
+        x_mid = (xi1+xi2+xi3)/3
+        y_mid = (yi1+yi2+yi3)/3
 
         # Add the data points to list of data points
         X.append(x_mid)
@@ -167,7 +154,7 @@ A1 = np.hstack([X**2, Y**2, X, Y])
 b1 = np.ones_like(X)
 x1 = np.linalg.lstsq(A1, b1)[0].squeeze()
 x1=x1.reshape((4,1))
-#print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x1[0,0], x1[1,0],x1[2,0],x1[3,0]))
+
 # Calculate cost function
 cost1=np.sum(np.square(np.subtract(np.matmul(A1,x1), b1)))
 
@@ -180,8 +167,8 @@ x_coord = np.linspace(-300,300,300)
 y_coord = np.linspace(-300,300,300)
 X_coord, Y_coord = np.meshgrid(x_coord, y_coord)
 Z_coord = x1[0,0] * X_coord ** 2 + x1[1,0] * Y_coord**2 + x1[2,0] * X_coord + x1[3,0] * Y_coord
-#plt.contour(X_coord, Y_coord, Z_coord, levels=[1], colors=('r'), linewidths=2)
-#print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x1[0,0], x1[1,0],x1[2,0],x1[3,0]))
+plt.contour(X_coord, Y_coord, Z_coord, levels=[1], colors=('r'), linewidths=2)
+print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x1[0,0], x1[1,0],x1[2,0],x1[3,0]))
 
 # .........................................................................................................................
 # Formulate and solve the least squares problem ||Ax - b ||^2
@@ -202,7 +189,7 @@ x2[0],x2[1],x2[2],x2[3],x2[4]=translate_eq(x2[0],x2[1],x2[2],x2[3],x2[4],x_2_cen
 
 # Plt unrotated curve
 Z_coord = x2[0,0] * X_coord ** 2 + x2[1,0]* X_coord * Y_coord + x2[2,0] * Y_coord**2 + x2[3,0] * X_coord + x2[4,0] * Y_coord
-#plt.contour(X_coord, Y_coord, Z_coord, levels=[1], colors=('g'), linewidths=2)
+plt.contour(X_coord, Y_coord, Z_coord, levels=[1], colors=('g'), linewidths=2)
 print('The ellipse is given by {0:.3}x^2+{1:.3}xy+{2:.3}y^2+{3:.3}x+{4:.3}y = 1'.format(x2[0,0], x2[1,0],x2[2,0],x2[3,0],x2[4,0]))
 
 # Find actual equaion without
@@ -219,29 +206,8 @@ print(A,B,C,D,E,F)
 x3=np.array([A,C,D,E])
 x3=x3.reshape((4,1))
 
-"""
-# Calculate cost function
-Xrotation_matrix=np.array([np.cos(angle_of_rotation), np.sin(angle_of_rotation)])
-Xrotation_matrix=Xrotation_matrix.reshape((1,2))
-Yrotation_matrix=np.array([-np.sin(angle_of_rotation), np.cos(angle_of_rotation)])
-Yrotation_matrix=Yrotation_matrix.reshape((1,2))
-new_X=np.matmul(Xrotation_matrix, XY_coord)
-new_Y=np.matmul(Yrotation_matrix, XY_coord)
-new_X=new_X.reshape((no_data_points,1))
-new_Y=new_Y.reshape((no_data_points,1))
-A3 = np.hstack([new_X**2, new_Y**2, new_X, new_Y])
-
-# Calcualte cost function
-cost3=np.sum(np.square(np.subtract(np.matmul(A3,x3), b2))) """
-
-# Plot the least squares ellipse
-#Z_coord = x3[0,0] * X_coord ** 2 + x3[1,0] * Y_coord**2 + x3[2,0] * X_coord + x3[3,0] * Y_coord
-#plt.contour(X_coord, Y_coord, Z_coord, levels=[1], colors=('b'), linewidths=2)
-
 # .........................................................................................................................
-#Conversion to other equations
-# equation 1/a^2(x-h)^2 + 1/b^2(y-k)^2
-# foci equation c^2 = a^2-b^2
+# Conversion to other equation
 
 # First ellipse
 h1 = -x1[2,0]/(2*x1[0,0])
@@ -254,7 +220,7 @@ x1_c1 = h1
 y1_c1 = k1+c1
 x2_c1 = h1
 y2_c1 = k1-c1
-#plt.scatter([x1_c1, x2_c1],[y1_c1, y2_c1], color="r", label="foci of red ellipse")
+plt.scatter([x1_c1, x2_c1],[y1_c1, y2_c1], color="r", label="foci of red ellipse")
 distance_sun_foc1 = np.sqrt((y2_c1-y_1_loc_sun)**2+(x2_c1-x_1_loc_sun)**2)
 
 # Second ellipse
@@ -269,20 +235,19 @@ x1_c2 = c2*np.cos(angle_of_rotation)
 y1_c2 = c2*np.sin(angle_of_rotation)
 x2_c2 = -c2*np.cos(angle_of_rotation)
 y2_c2 = -c2*np.sin(angle_of_rotation)
-#plt.scatter([x1_c2, x2_c2],[y1_c2, y2_c2], color="g",label="foci of blue ellipse")
+plt.scatter([x1_c2, x2_c2],[y1_c2, y2_c2], color="g",label="foci of blue ellipse")
 distance_sun_foc2 = np.sqrt((y1_c2-y_2_loc_sun)**2+(x1_c2-x_2_loc_sun)**2)
-print("")
-#print(e1,e2)
+
+print(e1,e2)
 print(h1,k1,a1,b1)
-#print(x_1_loc_sun,x_2_loc_sun,y_1_loc_sun,y_2_loc_sun)
-#print("foci points:",str([x1_c1,y1_c1,x2_c1,y2_c1]))
+print(x_1_loc_sun,x_2_loc_sun,y_1_loc_sun,y_2_loc_sun)
+print("foci points:",str([x1_c1,y1_c1,x2_c1,y2_c1]))
 print(h2,k2,a2,b2)
-#print("foci points:",str([x1_c2,y1_c2,x2_c2,y2_c2]))
+print("foci points:",str([x1_c2,y1_c2,x2_c2,y2_c2]))
 print("distance from foci to sun", str([distance_sun_foc1, distance_sun_foc2]))
 
 # .........................................................................................................................
-# Constraint: Sun is one of the focus points 
-# foci equation c^2 = a^2-b^2
+# Method 3
 
 # Position of center and sun location
 x_center, y_center = 0,0
@@ -323,9 +288,6 @@ x_sun, y_sun = x_sun*np.cos(angle_tilt_sun)+y_sun*np.sin(angle_tilt_sun), -x_sun
 #plt.scatter(X_new,Y_new,marker="x")
 plt.scatter(x_sun,y_sun, color="orange")
 
-
-# Try fitting normal fitting equation
-
 # Formulate and solve the least squares problem ||Ax - b ||^2
 A2 = np.hstack([(-(dist_center_to_sun**2-Y_new**2-X_new**2)+np.sqrt((dist_center_to_sun**2-X_new**2-Y_new**2)**2-4*(dist_center_to_sun**2)*Y_new**2))/2])
 b2 = np.repeat(1,no_data_points)
@@ -340,19 +302,11 @@ print(np.sqrt(a_squared), np.sqrt(b_squared))
 cost3=np.sum(np.square(np.subtract(np.matmul(A2,x2), b2)))
 
 # .........................................................................................................................
-# Rotate all ellipses back to the normal one (with )
-
-
-
-# .........................................................................................................................
 # Print/Plot everything
-#print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x1[0,0], x1[1,0],x1[2,0],x1[3,0]))
-#print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x3[0,0], x3[1,0],x3[2,0],x3[3,0]))
-
+print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x1[0,0], x1[1,0],x1[2,0],x1[3,0]))
+print('The ellipse is given by {0:.3}x^2+{1:.3}y^2+{2:.3}x+{3:.3}y = 1'.format(x3[0,0], x3[1,0],x3[2,0],x3[3,0]))
 print("costs:", str([cost1, cost2,cost3]))
-#plt.legend(loc='upper left')
-#plt.annotate("Fitted ellipse with assumed 0 tilt", (-90,-270), color="red")
-#plt.annotate("Fitted ellipse with calculated tilt of {0:.3} degrees".format(angle_of_rotation*180/np.pi), (-90,-294),color="blue")
+
 plt.title("Fitting Ellipses")
 plt.xlabel("Distance (x) in million km")
 plt.ylabel("Distance (y) in million km")
